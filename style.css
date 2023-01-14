@@ -1,0 +1,84 @@
+html,
+body {
+    background-color: #fff;
+    font-family: 'Courier New';
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#draggable {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #111;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    color: #111;
+    font-size: 1.5rem;
+    font-weight: 600;
+    cursor: grab;
+    box-sizing: border-box;
+}
+
+.draggable-element_sorted,
+.draggable-element_unsorted,
+.draggable-element_new {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+}
+
+.draggable-element_new {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    cursor: move;
+}
+
+.draggable-element_sorted {
+    position: none;
+}
+.draggable-element_unsorted {
+    position: absolute;
+}
+
+.wrapper {
+    display: flex;
+    gap: 20px;
+    padding: 0px;
+    margin-top: 20px;
+    min-height: 256px;
+}
+
+.droptarget {
+    border-radius: 12px;
+    width: 50%;
+    padding: 20px;
+    border: 2px solid #111;
+    transition: border 0.5s linear;
+    overflow: hidden;
+}
+
+.sorted {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.unsorted {
+    position: relative;
+}
+
+.hover {
+    border: 2px dashed #111;
+}
