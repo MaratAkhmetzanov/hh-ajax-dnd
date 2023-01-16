@@ -90,7 +90,3 @@ main {
 .unsorted {
     position: relative;
 }
-
-.hover {
-    border: 2px dashed #333;
-}
