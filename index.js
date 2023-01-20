@@ -4,7 +4,7 @@ const draggable = document.getElementById('draggable');
 let sortedEmpty = true;
 let unsortedEmpty = true;
 
-// Координаты курсора относительно перетаскиваемого элемента, чтобы ничего не прыгало.
+// Координаты указателя относительно перетаскиваемого элемента, чтобы ничего не прыгало.
 const cursorPosition = {
     x: 0,
     y: 0,
@@ -28,19 +28,35 @@ const setRandomColor = (element) => {
 };
 
 /**
- * Перемещает элемент вслед за курсором с учетом скролла
- * @param {MouseEvent} event - событие перемещения мыши
+ * Перемещает элемент вслед за указателем с учетом скролла
+ * @param {PointerEvent} event - событие перемещения
  */
 const elementDragHandler = (event) => {
-    event.stopPropagation();
     event.preventDefault();
 
-    elementPosition.x = event.clientX + window.pageXOffset - cursorPosition.x;
-    elementPosition.y = event.clientY + window.pageYOffset - cursorPosition.y;
+    elementPosition.x = event.clientX - cursorPosition.x;
+    elementPosition.y = event.clientY - cursorPosition.y;
 
-    document.querySelector(
-        '.draggable-element_new',
-    ).style.transform = `translate(${elementPosition.x}px, ${elementPosition.y}px)`;
+    if (
+        window.innerHeight + 10 < event.clientY + 10 &&
+        event.clientY + window.scrollY <= document.documentElement.offsetHeight
+    ) {
+        window.scrollTo({
+            top: window.scrollY + 150,
+            behavior: 'smooth',
+        });
+    }
+
+    if (window.scrollY > 0 && event.clientY < 20) {
+        window.scrollTo({
+            top: window.scrollY - 150,
+            behavior: 'smooth',
+        });
+    }
+
+    document.querySelector('.draggable-element_new').style.transform = `translate(${
+        elementPosition.x + window.scrollX
+    }px, ${elementPosition.y + window.scrollY}px)`;
 };
 
 /**
@@ -48,87 +64,87 @@ const elementDragHandler = (event) => {
  * @param {Event} event - событие скролла
  */
 const scrollHandler = (event) => {
+    event.preventDefault();
     document.querySelector('.draggable-element_new').style.transform = `translate(${
-        elementPosition.x + window.pageXOffset
-    }px, ${elementPosition.y + window.pageYOffset}px)`;
+        elementPosition.x + window.scrollX
+    }px, ${elementPosition.y + window.scrollY}px)`;
 };
 
 /**
- * Обработка отпускания кнопки мыши. Проверяет где отпустили мышь, и если в этой точке находится контейнер
+ * Обработка завершения перетаскивания. Проверяет координаты завершения драгндропа, и если в этой точке находится контейнер
  * куда можно переместить элемент, то добавляет элемент в этот контейнер
- * @param {MouseEvent} event - событие mouseup
+ * @param {PointerEvent} event - событие pointerup
  */
 const dropHandler = (event) => {
-    try {
-        document.removeEventListener('mousemove', elementDragHandler);
-        document.removeEventListener('scroll', scrollHandler);
+    document.removeEventListener('pointermove', elementDragHandler);
+    document.removeEventListener('scroll', scrollHandler);
 
-        // Определяем и запоминаем, что находится позади перетаскиваемого элемента
-        const target = event.target;
-        target.hidden = true;
-        const elementBelow = document.elementFromPoint(event.clientX, event.clientY);
-        target.hidden = false;
-
-        // Получаем контейнер, если он находится позади перетаскиваемого элемента
-        let closestDropTarget = null;
-        if (elementBelow) {
-            closestDropTarget = elementBelow.closest('.droptarget');
-        }
-
-        // Проверяем, что делать с перетаскиваемым элементом. Если сзади контейнер для перетаскивания,
-        // то добавляем элемент туда, предварительно поменяв класс. Иначе удаляем элемент со страницы.
-        if (closestDropTarget && closestDropTarget === document.querySelector('.sorted')) {
-            target.classList.remove('draggable-element_new');
-            target.classList.add('draggable-element_sorted');
-
-            if (sortedEmpty) {
-                closestDropTarget.innerText = '';
-                sortedEmpty = false;
-            }
-
-            target.style.transform = '';
-            closestDropTarget.appendChild(target);
-        } else if (closestDropTarget && closestDropTarget === document.querySelector('.unsorted')) {
-            target.classList.remove('draggable-element_new');
-            target.classList.add('draggable-element_unsorted');
-
-            if (unsortedEmpty) {
-                closestDropTarget.innerText = '';
-                unsortedEmpty = false;
-            }
-
-            target.style.transform = '';
-            target.style.left = `${
-                event.clientX - closestDropTarget.getBoundingClientRect().left - cursorPosition.x + 12
-            }px`;
-            target.style.top = `${
-                event.clientY - closestDropTarget.getBoundingClientRect().top - cursorPosition.y + 20
-            }px`;
-
-            closestDropTarget.appendChild(target);
-        } else {
-            document.querySelectorAll('.draggable-element_new').forEach((item) => {
-                item.remove();
-            });
-        }
-        document.removeEventListener('mouseup', dropHandler);
-    } catch (err) {
-        console.log(err);
+    // Определяем и запоминаем, что находится позади перетаскиваемого элемента
+    const dragElement = document.querySelector('.draggable-element_new');
+    let elementBelow = null;
+    if (dragElement) {
+        dragElement.hidden = true;
+        elementBelow = document.elementFromPoint(event.clientX, event.clientY);
+        dragElement.hidden = false;
     }
+
+    // Получаем контейнер, если он находится позади перетаскиваемого элемента
+    let closestDropTarget = null;
+    if (elementBelow) {
+        closestDropTarget = elementBelow.closest('.droptarget');
+    }
+
+    // Проверяем, что делать с перетаскиваемым элементом. Если сзади контейнер для перетаскивания,
+    // то добавляем элемент туда, предварительно поменяв класс. Иначе удаляем элемент со страницы.
+    if (dragElement && closestDropTarget && closestDropTarget === document.querySelector('.sorted')) {
+        dragElement.classList.remove('draggable-element_new');
+        dragElement.classList.add('draggable-element_sorted');
+
+        if (sortedEmpty) {
+            closestDropTarget.innerText = '';
+            sortedEmpty = false;
+        }
+
+        dragElement.style.transform = '';
+        closestDropTarget.appendChild(dragElement);
+    } else if (dragElement && closestDropTarget && closestDropTarget === document.querySelector('.unsorted')) {
+        dragElement.classList.remove('draggable-element_new');
+        dragElement.classList.add('draggable-element_unsorted');
+
+        if (unsortedEmpty) {
+            closestDropTarget.innerText = '';
+            unsortedEmpty = false;
+        }
+
+        dragElement.style.transform = '';
+        dragElement.style.left = `${
+            event.clientX - closestDropTarget.getBoundingClientRect().left - cursorPosition.x + 12
+        }px`;
+        dragElement.style.top = `${
+            event.clientY - closestDropTarget.getBoundingClientRect().top - cursorPosition.y + 20
+        }px`;
+
+        closestDropTarget.appendChild(dragElement);
+    } else {
+        document.querySelectorAll('.draggable-element_new').forEach((item) => {
+            item.remove();
+        });
+    }
+    document.removeEventListener('pointerup', dropHandler);
 };
 
-// Вешаем обработчик зажатия кнопки мыши, чтобы создать элемент перетаскивания.
-// На созданный элемент вешаем обработчики, которые удаляем при отпускании мыши.
-draggable.addEventListener('mousedown', (event) => {
-    cursorPosition.x = event.clientX + window.pageXOffset;
-    cursorPosition.y = event.clientY + window.pageYOffset;
+// Вешаем обработчик pointerdown, чтобы создать элемент перетаскивания при задатии кнопки мыши или при таче.
+// На созданный элемент вешаем обработчики, которые удаляем при событии pointerup.
+draggable.addEventListener('pointerdown', (event) => {
+    cursorPosition.x = event.clientX + window.scrollX;
+    cursorPosition.y = event.clientY + window.scrollY;
 
     const newDragElement = document.createElement('div');
     newDragElement.classList.add('draggable-element_new');
     setRandomColor(newDragElement);
     document.body.appendChild(newDragElement);
 
-    document.addEventListener('mousemove', elementDragHandler);
+    document.addEventListener('pointermove', elementDragHandler);
     document.addEventListener('scroll', scrollHandler);
-    document.addEventListener('mouseup', dropHandler);
+    document.addEventListener('pointerup', dropHandler);
 });
